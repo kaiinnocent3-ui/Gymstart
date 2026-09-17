@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827"><title>GymStart</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f8fafc;color:#111827}
+#app{max-width:650px;margin:auto;min-height:100vh;padding-bottom:80px}header{padding:28px 20px 12px}header h1{margin:0;font-size:30px}header p{margin:4px 0;color:#64748b}
+main{padding:12px 20px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:18px;margin:12px 0;box-shadow:0 2px 8px #00000008}
+.hero{background:#111827;color:#fff;border-radius:22px;padding:22px;margin:10px 0 18px}.hero p{color:#cbd5e1}
+.btn{display:block;width:100%;padding:14px;border:0;border-radius:12px;background:#111827;color:#fff;font-weight:700;font-size:16px;margin-top:12px}
+.btn.secondary{background:#e2e8f0;color:#111827}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pill{display:inline-block;background:#e2e8f0;padding:5px 9px;border-radius:999px;font-size:12px}
+.exercise{display:flex;justify-content:space-between;gap:12px;align-items:center}.muted{color:#64748b;font-size:14px}
+.row{display:flex;gap:8px;align-items:center}.row input{width:75px;padding:10px;border:1px solid #cbd5e1;border-radius:10px}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(650px,100%);background:#fff;border-top:1px solid #e2e8f0;display:flex;justify-content:space-around;padding:10px}
+nav button{border:0;background:none;padding:8px;color:#475569;font-weight:600}
+h2{margin-top:8px}h3{margin-bottom:4px}label{display:block;font-weight:600;margin:12px 0 6px}
+select,input[type=text],input[type=number]{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff}
+</style></head><body><div id="app">
+<header><h1>GymStart</h1><p>Know exactly what to do.</p></header><main id="screen"></main>
+<nav><button onclick="tab='home';render()">Home</button><button onclick="tab='programme';render()">Programme</button><button onclick="tab='journal';render()">Journal</button><button onclick="tab='profile';render()">Profile</button></nav>
+</div>
+<script>
+const KEY="gymstart_v1";const defaultState={goal:"muscle",days:3,logs:[],profile:{}};let state=JSON.parse(localStorage.getItem(KEY)||"null")||defaultState;let tab="home";
+const plans={muscle:{name:"Build Muscle",weeks:"8-week beginner plan"},fat:{name:"Lose Fat",weeks:"8-week beginner plan"},strength:{name:"Get Stronger",weeks:"8-week beginner plan"},fitness:{name:"General Fitness",weeks:"8-week beginner plan"}};
+const workouts=[
+{name:"Full Body A",ex:[["Goblet Squat",3,10],["Chest Press",3,10],["Lat Pulldown",3,10],["Seated Row",2,12],["Plank",3,30]]},
+{name:"Full Body B",ex:[["Leg Press",3,10],["Dumbbell Shoulder Press",3,10],["Cable Row",3,10],["Romanian Deadlift",2,10],["Dead Bug",3,10]]},
+{name:"Full Body C",ex:[["Split Squat",3,8],["Incline Chest Press",3,10],["Lat Pulldown",3,10],["Leg Curl",2,12],["Farmer Carry",3,30]]}];
+function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+const views={
+home:()=>`<div class="hero"><h2>Welcome${state.profile.name?" "+state.profile.name:""} 👋</h2><p>Your next workout is ready. No guessing, just follow the steps.</p><button class="btn" onclick="tab='workout';render()">Start today's workout</button></div><div class="card"><span class="pill">${plans[state.goal].name}</span><h2>${workouts[state.logs.length%3].name}</h2><p class="muted">About 40–50 minutes · Beginner friendly</p></div><div class="grid"><div class="card"><b>${state.logs.length}</b><div class="muted">Workouts logged</div></div><div class="card"><b>${state.days}</b><div class="muted">Days / week</div></div></div>`,
+programme:()=>`<h2>Your Programme</h2><div class="card"><span class="pill">${plans[state.goal].weeks}</span><h2>${plans[state.goal].name}</h2><p>Train ${state.days} days per week. Start light, learn the movements and gradually add reps or weight.</p></div>${workouts.map((w,i)=>`<div class="card"><h3>Day ${i+1}: ${w.name}</h3><p class="muted">${w.ex.length} exercises</p><button class="btn secondary" onclick="tab='workout';render()">View workout</button></div>`).join("")}`,
+journal:()=>`<h2>Progress Journal</h2><div class="card"><h3>Workouts completed</h3><h2>${state.logs.length}</h2><p class="muted">Keep showing up. Your history will build here.</p></div>${state.logs.slice().reverse().map(x=>`<div class="card"><b>${x.name}</b><p class="muted">${new Date(x.date).toLocaleDateString()} · ${x.entries.filter(e=>e.done).length} exercises completed</p></div>`).join("")||`<div class="card"><p>No workouts yet. Complete your first session and it will appear here.</p></div>`,
+profile:()=>`<h2>Set up your profile</h2><div class="card"><label>Name (optional)</label><input type="text" id="name" value="${state.profile.name||""}" placeholder="Your name"><label>Main goal</label><select id="goal"><option value="muscle">Build muscle</option><option value="fat">Lose fat</option><option value="strength">Get stronger</option><option value="fitness">General fitness</option></select><label>Days per week</label><select id="days"><option>2</option><option>3</option><option>4</option><option>5</option></select><button class="btn" onclick="saveProfile()">Save profile</button></div><div class="card"><b>Safety note</b><p class="muted">This MVP provides general fitness guidance, not medical advice. If you have an injury, medical condition, or symptoms that could affect exercise, seek appropriate professional advice before training.</p></div>`};
+function render(){document.getElementById("screen").innerHTML=tab==="workout"?workoutView():views[tab]();if(tab==="profile"){document.getElementById("goal").value=state.goal;document.getElementById("days").value=state.days}}
+function workoutView(){const w=workouts[state.logs.length%3];return `<h2>${w.name}</h2><p class="muted">Complete each exercise at a controlled pace. Choose a weight you can perform with good technique.</p>${w.ex.map((e,i)=>`<div class="card"><div class="exercise"><div><h3>${e[0]}</h3><span class="pill">${e[1]} × ${e[2]}${e[2]===30?" sec":" reps"}</span></div><input type="checkbox" id="done${i}" style="width:22px;height:22px"></div><div class="row" style="margin-top:12px"><span class="muted">Weight</span><input type="number" id="weight${i}" placeholder="kg"></div></div>`).join("")}<button class="btn" onclick="finishWorkout()">Finish workout</button><button class="btn secondary" onclick="tab='home';render()">Cancel</button>`}
+function finishWorkout(){const w=workouts[state.logs.length%3];const entries=w.ex.map((e,i)=>({exercise:e[0],weight:document.getElementById("weight"+i).value,done:document.getElementById("done"+i).checked}));state.logs.push({name:w.name,date:new Date().toISOString(),entries});save();tab="journal";render()}
+function saveProfile(){state.profile.name=document.getElementById("name").value;state.goal=document.getElementById("goal").value;state.days=+document.getElementById("days").value;save();tab="home";render()}
+render();
+</script></body></html>
